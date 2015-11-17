@@ -29,6 +29,7 @@ class Planet(Widget):
     mass = NumericProperty(1)
     density = NumericProperty(10)
 
+    showforcelimit = NumericProperty(5)
 
     def __init__(self, fixed, position, velocity, mass, density, colour,
                  **kwargs):
@@ -39,6 +40,8 @@ class Planet(Widget):
         self.velocity = velocity
         self.density = density
         self.colour = colour
+        self.showforcelimit = float(App.get_running_app().config.get('planetapp','showforcelimit'))
+
         self.calc_size()
         self.hillbodies = []
 
@@ -61,13 +64,11 @@ class Planet(Widget):
             self.velocity_y -= force_y / self.mass
 
     def calc_hillbodies(self, force, planet):
-        
-        # wip...
-        #if not 
-        #if bool(int(App.get_running_app().config.get('planetapp','showforcemode')))
-        #    return
-        # dirty hack ahead...
-        if ((force / self.mass) > 0.001):
+        # typecasting problem while crosscompiling
+        foo = App.get_running_app().config.get('planetapp','showforcemode')
+        if foo == u'0':
+            return
+        if ((force / self.mass) > (self.showforcelimit * 0.0002)):
             if not planet.fixed:
                 if not planet in self.hillbodies: 
                     self.hillbodies.append(planet)
@@ -295,6 +296,7 @@ class PlanetApp(App):
             'gravity' : 2,
             'resetmass' : 50,
             'showforcemode' : False,
+            'showforcelimit' : 5,
             'planetmass' : 10}),
         '''
             'boolexample': True,
