@@ -12,7 +12,9 @@ from kivy.graphics.instructions import InstructionGroup
 from kivy.uix.settings import SettingsWithSidebar
 from settingsjson import settings_json
 from kivy.core.image import Image
-import random
+from random import choice
+
+import os
 
 class Planet(Widget):
     velocity_x = NumericProperty(0)
@@ -118,29 +120,32 @@ class PlanetGame(Scatter):
 
     def __init__(self, **kwargs):
         super(PlanetGame, self).__init__(**kwargs)
-        
-        earth = Image('earth.png').texture
-        eve = Image('eve.png').texture
-        forest = Image('forest.png').texture
-        lava = Image('lava.png').texture
-        rock = Image('rock.png').texture
-        strange = Image('strange.png').texture
-        swamp = Image('swamp.png').texture
-        self.textures = [earth,eve,forest,lava,rock,strange,swamp]        
+        self.textures = []
+        self.files = []
+        self.load_textures()
 
     def i_am_dead(self, deadplanet):
         for planet in self.children:
             if deadplanet in planet.hillbodies:
                 planet.hillbodies.remove(deadplanet)
 
+    def load_textures(self):
+        path = ('./textures/')
+        for file in os.listdir(path):
+            if file.endswith('.png'):
+                self.files.append(path + str(file))
+        for string in self.files:
+            self.textures.append(Image(string).texture)
+
     def add_planet(self, fixed, position, velocity, mass=1, 
                    density=5, colour=(1,1,1)):
         new_planet = Planet(fixed, position, velocity, mass, density, colour)
         if not fixed:
-            new_planet.canvas.children[1].texture = random.choice(self.textures)
+            new_planet.canvas.children[1].texture = choice(self.textures)
         self.add_widget(new_planet)
 
     def update(self,dt):
+        print self.files
         for planet in self.children:
             if planet.fixed:
                 planet.center = (self.width/2+50,self.height/2)
@@ -210,6 +215,8 @@ class PlanetGame(Scatter):
             if planet.mass < self.resetmass:
                 L.append(planet)
         if L:
+            for planet in L:
+                self.i_am_dead(planet)
             self.clear_widgets(L)
 
     def reset_game(self):
