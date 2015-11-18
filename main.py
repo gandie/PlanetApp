@@ -15,6 +15,7 @@ from kivy.core.image import Image
 from random import choice
 
 import os
+import math
 
 class Planet(Widget):
     velocity_x = NumericProperty(0)
@@ -117,6 +118,7 @@ class PlanetGame(Scatter):
     gravity = NumericProperty(1)
     planetmass = NumericProperty(1)
     resetmass = NumericProperty(10)
+    sunmass = NumericProperty(1000)
 
     def __init__(self, **kwargs):
         super(PlanetGame, self).__init__(**kwargs)
@@ -145,7 +147,6 @@ class PlanetGame(Scatter):
         self.add_widget(new_planet)
 
     def update(self,dt):
-        print self.files
         for planet in self.children:
             if planet.fixed:
                 planet.center = (self.width/2+50,self.height/2)
@@ -170,6 +171,7 @@ class PlanetGame(Scatter):
         ud['id'] = 'gametouch'
         ud['firstpos'] = touch.pos
         ud['group'] = g = str(touch.uid)
+
         with self.canvas:
             ud['lines'] = [
                 Line(points=(touch.x,touch.y,touch.x+1,touch.y+1),width=1,
@@ -184,10 +186,67 @@ class PlanetGame(Scatter):
         touch.push()
         touch.apply_transform_2d(self.to_local)
         ud = touch.ud
-        ud['lines'][0].points = (ud['firstpos'][0],ud['firstpos'][1],
-                                 touch.x,touch.y)
+        #####################
+        # planet
+        velocity = ((ud['firstpos'][0] - touch.x) / -50, (ud['firstpos'][1] - touch.y) / - 50)
+        planetpos = (ud['firstpos'][0], ud['firstpos'][1])
+
+
+        # sun
+        sunpos = (self.width/2+50,self.height/2)
+        #print sunpos
+        #print type(self.planetmass)
+        trajectory = self.calc_trajectory(planetpos, velocity, self.planetmass,
+                                          sunpos, self.sunmass, .1, 10000)  
+
+        #print trajectory
+        ###########################
+        #ud['lines'][0].points = (ud['firstpos'][0],ud['firstpos'][1],
+        #                         touch.x,touch.y)
+
+
+        ud['lines'][0].points = trajectory
+
+
+
+
         touch.pop()
 
+    def calc_trajectory (self, coord_planet, speed_planet, weight_planet, coord_sun,
+                     weight_sun, interval, count):
+	gamma =  self.gravity * 100# transfer to planetApp's universe...
+	L = []
+	
+	coords = coord_planet
+	speed = speed_planet
+			
+	for i in range(count) :
+		r = self.calc_distance(coords, coord_sun)
+		#g = (-1 * gamma) * (weight_planet + weight_sun) / math.pow(r, 2.0) 
+		g = (-1 * gamma) * (weight_planet) / math.pow(r, 2.0) 
+		gx = g * ((coords[0] - coord_sun[0]) / r)
+		gy = g * ((coords[1] - coord_sun[1]) / r)
+		speed = (speed[0] + (gx * interval), speed[1] + (gy * interval))
+		coords = (coords[0] + (speed[0] * interval) + 
+                          (0.5 * gx * math.pow(interval, 2.0)),
+                          coords[1] + (speed[1] * interval) + 
+                          (0.5 * gy * math.pow(interval, 2.0)))
+		
+		L.append(coords)
+	
+        R = []
+        for item in L:
+            R.append(item[0])
+            R.append(item[1])
+
+        return tuple(R)
+        #return L
+
+    def calc_distance(self, tuple1, tuple2):
+        return math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
+                         math.pow(tuple1[1] - tuple2[1], 2.0))
+
+#########################
     def on_touch_up(self, touch):
         if touch.grab_current is not self:
             return
@@ -199,7 +258,9 @@ class PlanetGame(Scatter):
 
         touchdownv = Vector(ud['firstpos'])
         touchupv = Vector(touch.pos)
-        velocity = (touchupv - touchdownv) / 50 
+        velocity = (touchupv - touchdownv) / 50
+        print '#'
+        print velocity
 
         self.add_planet(False, ud['firstpos'], (velocity.x, velocity.y), self.planetmass)
         self.canvas.remove_group(ud['group'])
@@ -226,6 +287,7 @@ class PlanetGame(Scatter):
         if L:
             self.clear_widgets(L)
         sunmass = App.get_running_app().config.get('planetapp','defaultsunmass')
+        self.sunmass = sunmass
         self.gravity = float(App.get_running_app().config.get('planetapp','gravity'))
         self.planetmass = float(App.get_running_app().config.get('planetapp','planetmass'))
         self.resetmass = float(App.get_running_app().config.get('planetapp','resetmass'))
@@ -280,6 +342,7 @@ class PlanetApp(App):
         game = PlanetGame(do_rotation=False,do_translation=False)
         # Settings come in as unicode!
         sunmass = App.get_running_app().config.get('planetapp','defaultsunmass')
+        game.sunmass = sunmass
         game.gravity = float(App.get_running_app().config.get('planetapp','gravity'))
         game.planetmass = float(App.get_running_app().config.get('planetapp','planetmass'))
         game.resetmass = float(App.get_running_app().config.get('planetapp','resetmass'))
