@@ -191,13 +191,13 @@ class PlanetGame(Scatter):
         velocity = ((ud['firstpos'][0] - touch.x) / -50, (ud['firstpos'][1] - touch.y) / - 50)
         planetpos = (ud['firstpos'][0], ud['firstpos'][1])
 
-
+        print self.sunmass
         # sun
         sunpos = (self.width/2+50,self.height/2)
         #print sunpos
         #print type(self.planetmass)
         trajectory = self.calc_trajectory(planetpos, velocity, self.planetmass,
-                                          sunpos, self.sunmass, .1, 10000)  
+                                          sunpos, self.sunmass, 1, 500)  
 
         #print trajectory
         ###########################
@@ -214,16 +214,16 @@ class PlanetGame(Scatter):
 
     def calc_trajectory (self, coord_planet, speed_planet, weight_planet, coord_sun,
                      weight_sun, interval, count):
-	gamma =  self.gravity * 100# transfer to planetApp's universe...
+	gamma =  self.gravity # transfer to planetApp's universe...
 	L = []
 	
 	coords = coord_planet
 	speed = speed_planet
-			
+        #print weight_sun
 	for i in range(count) :
 		r = self.calc_distance(coords, coord_sun)
 		#g = (-1 * gamma) * (weight_planet + weight_sun) / math.pow(r, 2.0) 
-		g = (-1 * gamma) * (weight_planet) / math.pow(r, 2.0) 
+		g = (-1 * gamma) * (weight_sun) / math.pow(r, 2.0) 
 		gx = g * ((coords[0] - coord_sun[0]) / r)
 		gy = g * ((coords[1] - coord_sun[1]) / r)
 		speed = (speed[0] + (gx * interval), speed[1] + (gy * interval))
@@ -286,7 +286,7 @@ class PlanetGame(Scatter):
             L.append(planet)
         if L:
             self.clear_widgets(L)
-        sunmass = App.get_running_app().config.get('planetapp','defaultsunmass')
+        sunmass = float(App.get_running_app().config.get('planetapp','defaultsunmass'))
         self.sunmass = sunmass
         self.gravity = float(App.get_running_app().config.get('planetapp','gravity'))
         self.planetmass = float(App.get_running_app().config.get('planetapp','planetmass'))
@@ -341,12 +341,12 @@ class PlanetApp(App):
 
         game = PlanetGame(do_rotation=False,do_translation=False)
         # Settings come in as unicode!
-        sunmass = App.get_running_app().config.get('planetapp','defaultsunmass')
+        sunmass = float(App.get_running_app().config.get('planetapp','defaultsunmass'))
         game.sunmass = sunmass
         game.gravity = float(App.get_running_app().config.get('planetapp','gravity'))
         game.planetmass = float(App.get_running_app().config.get('planetapp','planetmass'))
         game.resetmass = float(App.get_running_app().config.get('planetapp','resetmass'))
-        game.add_planet(True, (100,100), (0,0), float(sunmass), 10, (1,1,1))
+        game.add_planet(True, (100,100), (0,0), sunmass, 10, (1,1,1))
         
         Clock.schedule_interval(game.update, 1.0 / 120.0)
 
