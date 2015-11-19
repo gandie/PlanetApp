@@ -119,6 +119,7 @@ class PlanetGame(Scatter):
     planetmass = NumericProperty(1)
     resetmass = NumericProperty(10)
     sunmass = NumericProperty(1000)
+    showtrajectorymode = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super(PlanetGame, self).__init__(**kwargs)
@@ -187,22 +188,20 @@ class PlanetGame(Scatter):
         touch.apply_transform_2d(self.to_local)
         ud = touch.ud
 
-        velocity = ((ud['firstpos'][0] - touch.x) / -50, (ud['firstpos'][1] - touch.y) / - 50)
-        planetpos = (ud['firstpos'][0], ud['firstpos'][1])
-
-        sunpos = (self.width/2+50,self.height/2)
-        trajectory = self.calc_trajectory(planetpos, velocity, self.planetmass,
-                                          sunpos, self.sunmass, 1, 250)  
-
-        # make this optional!
-        #ud['lines'][0].points = (ud['firstpos'][0],ud['firstpos'][1],
-        #                         touch.x,touch.y)
-
-
-        ud['lines'][0].points = trajectory
-
-
-
+        # typecasting-problems during cross-compiling
+        # leads to this ugly construction like in calc_hillbodies
+        foo = App.get_running_app().config.get('planetapp','showtrajectorymode')
+        if foo == u'0':
+            ud['lines'][0].points = (ud['firstpos'][0],ud['firstpos'][1],
+                                     touch.x,touch.y)
+        else:
+            velocity = ((ud['firstpos'][0] - touch.x) / -50, 
+                        (ud['firstpos'][1] - touch.y) / - 50)
+            planetpos = (ud['firstpos'][0], ud['firstpos'][1])
+            sunpos = (self.width/2+50,self.height/2)
+            trajectory = self.calc_trajectory(planetpos, velocity, self.planetmass,
+                                              sunpos, self.sunmass, 1, 250)  
+            ud['lines'][0].points = trajectory
 
         touch.pop()
 
@@ -339,6 +338,7 @@ class PlanetApp(App):
         game.gravity = float(App.get_running_app().config.get('planetapp','gravity'))
         game.planetmass = float(App.get_running_app().config.get('planetapp','planetmass'))
         game.resetmass = float(App.get_running_app().config.get('planetapp','resetmass'))
+
         game.add_planet(True, (100,100), (0,0), sunmass, 10, (1,1,1))
         
         Clock.schedule_interval(game.update, 1.0 / 120.0)
@@ -360,6 +360,7 @@ class PlanetApp(App):
             'resetmass' : 50,
             'showforcemode' : False,
             'showforcelimit' : 5,
+            'showtrajectorymode' : False,
             'planetmass' : 10}),
         '''
             'boolexample': True,
