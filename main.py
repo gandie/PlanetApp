@@ -57,7 +57,8 @@ class Planet(Widget):
             dist_y = self.center_y - planet.center_y
             # dist = sqrt(dist_x ** 2 + dist_y ** 2)
 			# 19.11.15 MWA +++++++++++
-			dist = calc_distance(self, (self.center_x, self.center_y), (planet.center_x, planet.center_y))
+            dist = self.parent.calc_distance((self.center_x, self.center_y), 
+                                             (planet.center_x, planet.center_y))
 			# 19.11.15 MWA -----------
 
             force = (gravity * self.mass * planet.mass) / (dist**2)
@@ -194,7 +195,7 @@ class PlanetGame(Scatter):
         velocity = ((ud['firstpos'][0] - touch.x) / -50, (ud['firstpos'][1] - touch.y) / - 50)
         planetpos = (ud['firstpos'][0], ud['firstpos'][1])
 
-        print self.sunmass
+        #print self.sunmass
         # sun
         sunpos = (self.width/2+50,self.height/2)
         #print sunpos
@@ -246,17 +247,12 @@ class PlanetGame(Scatter):
         #return L
 
     def calc_distance(self, tuple1, tuple2):
-        #return math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
-        #                 math.pow(tuple1[1] - tuple2[1], 2.0))
-		# 19.11.15 MWA +++++++++++++++++++
-		dist = math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
-                         math.pow(tuple1[1] - tuple2[1], 2.0))
-		if dist = 0 
-			dist = 0.000001
-		
-		return dist;		
-		# 19.11.15 MWA -------------------	
-		
+        dist = math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
+                        math.pow(tuple1[1] - tuple2[1], 2.0))
+        if dist == 0: 
+            dist = 0.000001
+            
+        return dist;		
 
 #########################
     def on_touch_up(self, touch):
