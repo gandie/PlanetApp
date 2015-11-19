@@ -191,6 +191,8 @@ class PlanetGame(Scatter):
         # typecasting-problems during cross-compiling
         # leads to this ugly construction like in calc_hillbodies
         foo = App.get_running_app().config.get('planetapp','showtrajectorymode')
+        trajectorylength = int(App.get_running_app().config.get('planetapp',
+                                                                'trajectorylength'))
         if foo == u'0':
             ud['lines'][0].points = (ud['firstpos'][0],ud['firstpos'][1],
                                      touch.x,touch.y)
@@ -199,8 +201,10 @@ class PlanetGame(Scatter):
                         (ud['firstpos'][1] - touch.y) / - 50)
             planetpos = (ud['firstpos'][0], ud['firstpos'][1])
             sunpos = (self.width/2+50,self.height/2)
-            trajectory = self.calc_trajectory(planetpos, velocity, self.planetmass,
-                                              sunpos, self.sunmass, 1, 250)  
+            trajectory = self.calc_trajectory(planetpos, velocity, 
+                                              self.planetmass, sunpos, 
+                                              self.sunmass, 1, 
+                                              trajectorylength)  
             ud['lines'][0].points = trajectory
 
         touch.pop()
@@ -361,6 +365,7 @@ class PlanetApp(App):
             'showforcemode' : False,
             'showforcelimit' : 5,
             'showtrajectorymode' : False,
+            'trajectorylength' : 250,
             'planetmass' : 10}),
         '''
             'boolexample': True,
