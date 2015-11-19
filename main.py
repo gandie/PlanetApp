@@ -55,7 +55,10 @@ class Planet(Widget):
         if not self.fixed:
             dist_x = self.center_x - planet.center_x
             dist_y = self.center_y - planet.center_y
-            dist = sqrt(dist_x ** 2 + dist_y ** 2)
+            # dist = sqrt(dist_x ** 2 + dist_y ** 2)
+			# 19.11.15 MWA +++++++++++
+			dist = calc_distance(self, (self.center_x, self.center_y), (planet.center_x, planet.center_y))
+			# 19.11.15 MWA -----------
 
             force = (gravity * self.mass * planet.mass) / (dist**2)
             force_x = force * (dist_x / dist)
@@ -243,8 +246,17 @@ class PlanetGame(Scatter):
         #return L
 
     def calc_distance(self, tuple1, tuple2):
-        return math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
+        #return math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
+        #                 math.pow(tuple1[1] - tuple2[1], 2.0))
+		# 19.11.15 MWA +++++++++++++++++++
+		dist = math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
                          math.pow(tuple1[1] - tuple2[1], 2.0))
+		if dist = 0 
+			dist = 0.000001
+		
+		return dist;		
+		# 19.11.15 MWA -------------------	
+		
 
 #########################
     def on_touch_up(self, touch):
