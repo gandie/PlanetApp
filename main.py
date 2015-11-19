@@ -43,8 +43,8 @@ class Planet(Widget):
         self.velocity = velocity
         self.density = density
         self.colour = colour
-        self.showforcelimit = float(App.get_running_app().config.get('planetapp','showforcelimit'))
-
+        self.showforcelimit = float(App.get_running_app().config.get('planetapp',
+                                                                     'showforcelimit'))
         self.calc_size()
         self.hillbodies = []
 
@@ -55,11 +55,7 @@ class Planet(Widget):
         if not self.fixed:
             dist_x = self.center_x - planet.center_x
             dist_y = self.center_y - planet.center_y
-            # dist = sqrt(dist_x ** 2 + dist_y ** 2)
-			# 19.11.15 MWA +++++++++++
-            dist = self.parent.calc_distance((self.center_x, self.center_y), 
-                                             (planet.center_x, planet.center_y))
-			# 19.11.15 MWA -----------
+            dist = self.parent.calc_distance(self.center,planet.center)
 
             force = (gravity * self.mass * planet.mass) / (dist**2)
             force_x = force * (dist_x / dist)
@@ -190,21 +186,15 @@ class PlanetGame(Scatter):
         touch.push()
         touch.apply_transform_2d(self.to_local)
         ud = touch.ud
-        #####################
-        # planet
+
         velocity = ((ud['firstpos'][0] - touch.x) / -50, (ud['firstpos'][1] - touch.y) / - 50)
         planetpos = (ud['firstpos'][0], ud['firstpos'][1])
 
-        #print self.sunmass
-        # sun
         sunpos = (self.width/2+50,self.height/2)
-        #print sunpos
-        #print type(self.planetmass)
         trajectory = self.calc_trajectory(planetpos, velocity, self.planetmass,
-                                          sunpos, self.sunmass, 1, 500)  
+                                          sunpos, self.sunmass, 1, 250)  
 
-        #print trajectory
-        ###########################
+        # make this optional!
         #ud['lines'][0].points = (ud['firstpos'][0],ud['firstpos'][1],
         #                         touch.x,touch.y)
 
@@ -218,15 +208,13 @@ class PlanetGame(Scatter):
 
     def calc_trajectory (self, coord_planet, speed_planet, weight_planet, coord_sun,
                      weight_sun, interval, count):
-	gamma =  self.gravity # transfer to planetApp's universe...
+	gamma =  self.gravity
 	L = []
 	
 	coords = coord_planet
 	speed = speed_planet
-        #print weight_sun
-	for i in range(count) :
+	for i in range(count):
 		r = self.calc_distance(coords, coord_sun)
-		#g = (-1 * gamma) * (weight_planet + weight_sun) / math.pow(r, 2.0) 
 		g = (-1 * gamma) * (weight_sun) / math.pow(r, 2.0) 
 		gx = g * ((coords[0] - coord_sun[0]) / r)
 		gy = g * ((coords[1] - coord_sun[1]) / r)
@@ -244,17 +232,14 @@ class PlanetGame(Scatter):
             R.append(item[1])
 
         return tuple(R)
-        #return L
 
     def calc_distance(self, tuple1, tuple2):
-        dist = math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
-                        math.pow(tuple1[1] - tuple2[1], 2.0))
+        dist =  math.sqrt(math.pow(tuple1[0] - tuple2[0], 2.0) + 
+                          math.pow(tuple1[1] - tuple2[1], 2.0))
         if dist == 0: 
             dist = 0.000001
-            
-        return dist;		
+        return dist	 
 
-#########################
     def on_touch_up(self, touch):
         if touch.grab_current is not self:
             return
