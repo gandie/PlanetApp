@@ -213,7 +213,6 @@ class PlanetGame(Scatter):
                      weight_sun, interval, count):
 	gamma =  self.gravity
 	L = []
-	
 	coords = coord_planet
 	speed = speed_planet
 	for i in range(count):
@@ -222,11 +221,10 @@ class PlanetGame(Scatter):
 		gx = g * ((coords[0] - coord_sun[0]) / r)
 		gy = g * ((coords[1] - coord_sun[1]) / r)
 		speed = (speed[0] + (gx * interval), speed[1] + (gy * interval))
-		coords = (coords[0] + (speed[0] * interval) + 
-                          (0.5 * gx * math.pow(interval, 2.0)),
-                          coords[1] + (speed[1] * interval) + 
-                          (0.5 * gy * math.pow(interval, 2.0)))
+                coords = (coords[0] + (speed[0] * interval), 
+                          coords[1] + (speed[1] * interval)) 
 		
+
 		L.append(coords)
 	
         R = []
