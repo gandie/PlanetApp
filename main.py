@@ -7,7 +7,7 @@ from kivy.vector import Vector
 from kivy.clock import Clock
 from math import sqrt
 from kivy.graphics import Line
-from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.graphics.instructions import InstructionGroup
 from kivy.uix.settings import SettingsWithSidebar
 from settingsjson import settings_json
@@ -33,6 +33,8 @@ class Planet(Widget):
     density = NumericProperty(10)
 
     showforcelimit = NumericProperty(5)
+
+    drawtrajectory = BooleanProperty(False)
 
     def __init__(self, fixed, position, velocity, mass, density, colour,
                  **kwargs):
@@ -91,6 +93,18 @@ class Planet(Widget):
         if len(self.hillbodies) > 0:
             self.canvas.add(shit)
 
+        if self.drawtrajectory and not self.fixed:
+            shit2 = InstructionGroup()
+            sunpos = (self.parent.width/2,self.parent.height/2)
+            trajectory = self.parent.calc_trajectory((self.center_x,self.center_y),
+                                                     self.velocity, 
+                                                     self.mass, sunpos, 
+                                                     self.parent.sunmass, 1, 
+                                                     1000)
+            shit2.add(Line(points=trajectory, width=1, group=str(self.uid)))
+            self.canvas.add(shit2)
+        else:
+            pass
 
     def merge(self, planet):
 
@@ -113,6 +127,9 @@ class Planet(Widget):
         diameter = 2 * sqrt(self.density * self.mass / 3.14)
         self.size = (diameter,diameter)
 
+    #def on_showtrajectory(self, instance, value):
+    #    print value
+
 class PlanetGame(Scatter):
     zoom = NumericProperty(1)
     gravity = NumericProperty(1)
@@ -127,10 +144,22 @@ class PlanetGame(Scatter):
         self.files = []
         self.load_textures()
 
+        #self.planetcycle = cycle(self.children)
+        self.planetindex = 0
+        self.maxplanets = len(self.children)
+        self.showplanet = None
+
     def i_am_dead(self, deadplanet):
         for planet in self.children:
             if deadplanet in planet.hillbodies:
                 planet.hillbodies.remove(deadplanet)
+
+    def on_children(self, instance, value):
+        #print 'jow'
+        self.maxplanets = len(value)
+        self.planetindex = 0
+        print self.maxplanets
+        #self.planetcycle = cycle(self.children)
 
     def load_textures(self):
         path = ('./textures/')
@@ -150,7 +179,7 @@ class PlanetGame(Scatter):
     def update(self,dt):
         for planet in self.children:
             if planet.fixed:
-                planet.center = (self.width/2+50,self.height/2)
+                planet.center = (self.width/2,self.height/2)
             planet.move()
             for planet2 in self.children:
                 if planet == planet2:
@@ -200,7 +229,7 @@ class PlanetGame(Scatter):
             velocity = ((ud['firstpos'][0] - touch.x) / -50, 
                         (ud['firstpos'][1] - touch.y) / - 50)
             planetpos = (ud['firstpos'][0], ud['firstpos'][1])
-            sunpos = (self.width/2+50,self.height/2)
+            sunpos = (self.width/2,self.height/2)
             trajectory = self.calc_trajectory(planetpos, velocity, 
                                               self.planetmass, sunpos, 
                                               self.sunmass, 1, 
@@ -223,9 +252,7 @@ class PlanetGame(Scatter):
 		speed = (speed[0] + (gx * interval), speed[1] + (gy * interval))
                 coords = (coords[0] + (speed[0] * interval), 
                           coords[1] + (speed[1] * interval)) 
-		
-
-		L.append(coords)
+                L.append(coords)
 	
         R = []
         for item in L:
@@ -253,8 +280,6 @@ class PlanetGame(Scatter):
         touchdownv = Vector(ud['firstpos'])
         touchupv = Vector(touch.pos)
         velocity = (touchupv - touchdownv) / 50
-        print '#'
-        print velocity
 
         self.add_planet(False, ud['firstpos'], (velocity.x, velocity.y), self.planetmass)
         self.canvas.remove_group(ud['group'])
@@ -287,19 +312,41 @@ class PlanetGame(Scatter):
         self.resetmass = float(App.get_running_app().config.get('planetapp','resetmass'))
         self.add_planet(True, (100,100), (0,0), float(sunmass), 10, (1,1,1))
 
-class PlanetGameLayout(BoxLayout):
+    def next_trajectory(self):
+        if self.showplanet:
+            for planet in self.children:
+                if planet == self.showplanet:
+                    if planet.drawtrajectory:
+                        planet.drawtrajectory = False
+        self.planetindex += 1
+        #print self.planetindex, self.maxplanets
+        if self.planetindex >= (self.maxplanets):
+            self.planetindex = 0
+        showplanet = self.children[self.planetindex]
+        #print showplanet
+        self.showplanet = showplanet
+        for planet in self.children:
+            if planet == showplanet:
+                if not planet.drawtrajectory:
+                    planet.drawtrajectory = True
+        #print 'hallo'
+
+class PlanetGameLayout(FloatLayout):
     def on_touch_down(self, touch):
         if self.children[0].collide_point(touch.x,touch.y):
             self.children[0].on_touch_down(touch)
-            #print 'Button1'
+            #print 'NextButton'
         elif self.children[1].collide_point(touch.x,touch.y):
             self.children[1].on_touch_down(touch)
-            #print 'Button2'
-        elif self.children[3].collide_point(touch.x,touch.y):
-            self.children[3].on_touch_down(touch)
+            #print 'SettingButton'
+        elif self.children[2].collide_point(touch.x,touch.y):
+            self.children[2].on_touch_down(touch)
+            #print 'ResetButton'
+        elif self.children[4].collide_point(touch.x,touch.y):
+            self.children[4].on_touch_down(touch)
             #print 'Slider'
         else:
-            self.children[2].on_touch_down(touch)
+            self.children[3].on_touch_down(touch)
             #print 'Game'
 
     def on_touch_up(self, touch):
@@ -309,20 +356,40 @@ class PlanetGameLayout(BoxLayout):
         elif self.children[1].collide_point(touch.x,touch.y):
             self.children[1].on_touch_up(touch)
             #print 'Button2'
-        elif self.children[3].collide_point(touch.x,touch.y):
-            self.children[3].on_touch_up(touch)
+        elif self.children[2].collide_point(touch.x,touch.y):
+            self.children[2].on_touch_up(touch)
+            #print 'Button2'
+        elif self.children[4].collide_point(touch.x,touch.y):
+            self.children[4].on_touch_up(touch)
             #print 'Slider'
         else:
             pass
-            #self.children[2].on_touch_up(touch)
+            #self.children[3].on_touch_up(touch)
             #print 'Game'
 
 
     def clear_planets(self,instance):
-        self.children[2].clear_planets()
+        self.children[3].clear_planets()
+
+    def next_trajectory(self,instance):
+        self.children[3].next_trajectory()        
+
+    def set_background(self, showbackground):
+        for dude in self.canvas.children:
+            if 'Rectangle' in  type(dude).__name__:
+                if showbackground:
+                    dude.size = self.size
+                else:
+                    dude.size = (0,0)
 
     def reset_game(self):
-        self.children[2].reset_game()
+        showbackground = App.get_running_app().config.get('planetapp','showbackground')
+        if showbackground == u'0':
+            self.set_background(False)
+        else:
+            self.set_background(True)
+        self.children[3].reset_game()
+
 
 class SettingsButton(Button):
     pass
@@ -347,13 +414,18 @@ class PlanetApp(App):
 
         self.root = PlanetGameLayout()
         self.root.add_widget(game)
+        
 
-        b = Button(text="Reset",size_hint=(.1,.1))
+        b = Button(text="Reset",size_hint=(.3,.05),pos_hint={'x':.7,'y':0})
         b.bind(on_press=self.root.clear_planets)
         self.root.add_widget(b)
-        b2 = SettingsButton(text="Settings",size_hint=(.1,.1))
+        b2 = SettingsButton(text="Settings",size_hint=(.3,.05),pos_hint={'x':.4,'y':0})
         self.root.add_widget(b2)
 
+        b3 = Button(text="Next",size_hint=(.3,.05),pos_hint={'x':.1,'y':0})
+        b3.bind(on_press=self.root.next_trajectory)
+        self.root.add_widget(b3)
+        self.root.reset_game()
 
     def build_config(self, config):
         config.setdefaults('planetapp', {
@@ -364,6 +436,7 @@ class PlanetApp(App):
             'showforcelimit' : 5,
             'showtrajectorymode' : False,
             'trajectorylength' : 250,
+            'showbackground' : True,
             'planetmass' : 10}),
         '''
             'boolexample': True,
