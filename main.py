@@ -18,6 +18,10 @@ import os
 import math
 
 class Planet(Widget):
+    '''
+    a planet class
+    '''
+
     velocity_x = NumericProperty(0)
     velocity_y = NumericProperty(0)
     velocity = ReferenceListProperty(velocity_x, velocity_y)
